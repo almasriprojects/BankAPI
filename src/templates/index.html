@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chase Bank Statement Parser API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .method {
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .link {
+            color: #3498db;
+            text-decoration: none;
+        }
+        .link:hover {
+            text-decoration: underline;
+        }
+        .docs-links {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .welcome-text {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chase Bank Statement Parser API</h1>
+    
+    <div class="welcome-text">
+        <p>Welcome to the Chase Bank Statement Parser API.</p>
+        <p>This service processes Chase Bank statements (PDF) using OpenAI, 
+           converting them into structured JSON data.</p>
+    </div>
+    
+    <h2>Quick Start</h2>
+    <div class="endpoint">
+        <p><span class="method">POST</span> /upload-statement</p>
+        <p>Upload and process a bank statement PDF file.</p>
+    </div>
+    
+    <h2>Key Features</h2>
+    <ul>
+        <li>PDF statement upload and processing</li>
+        <li>OpenAI-powered document parsing</li>
+        <li>Structured JSON output</li>
+        <li>Transaction categorization</li>
+        <li>Spending analysis</li>
+        <li>Balance validation</li>
+    </ul>
+    
+    <h2>Documentation</h2>
+    <div class="docs-links">
+        <p>For detailed API documentation, visit:</p>
+        <ul>
+            <li>
+                <a href="/docs" class="link">
+                    Interactive API Documentation (Swagger UI)
+                </a>
+            </li>
+            <li>
+                <a href="/redoc" class="link">
+                    ReDoc Documentation
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <h2>API Status</h2>
+    <div class="endpoint">
+        <p>
+            <span class="method">GET</span>
+            <a href="/health" class="link">/health</a>
+        </p>
+        <p>Check the current status of the API.</p>
+    </div>
+    
+    <h2>Requirements</h2>
+    <ul>
+        <li>OpenAI API key (set in environment variables)</li>
+        <li>PDF file format</li>
+        <li>Maximum file size: 20MB</li>
+    </ul>
+</body>
+</html> 

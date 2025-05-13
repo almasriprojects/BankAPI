@@ -145,16 +145,21 @@ class StatementService:
         transaction_start = False
         transaction_id = 1
 
-        for line in lines:
+        logger.debug("Starting transaction extraction")
+        logger.debug(f"Total lines to process: {len(lines)}")
+
+        for i, line in enumerate(lines):
             line = line.strip()
             if not line:
                 continue
 
             if "TRANSACTION DETAIL" in line:
+                logger.debug(f"Found transaction section at line {i}")
                 transaction_start = True
                 continue
 
             if "DATE" in line and "DESCRIPTION" in line and "AMOUNT" in line and "BALANCE" in line:
+                logger.debug(f"Found header line at {i}: {line}")
                 continue
 
             if transaction_start and not line.startswith("Ending Balance"):
@@ -162,45 +167,54 @@ class StatementService:
                     if line.strip() == "Beginning Balance" or "$5,993.00" in line:
                         continue
 
+                    logger.debug(f"Processing transaction line {i}: {line}")
                     parts = line.split()
                     if len(parts) >= 4:
                         if not self._is_valid_date(parts[0]):
+                            logger.debug(f"Invalid date format at line {i}: {parts[0]}")
                             continue
 
                         date = parts[0]
-                        balance = float(
-                            parts[-1].replace("$", "").replace(",", ""))
-                        amount = float(
-                            parts[-2].replace("$", "").replace(",", ""))
-                        description_parts = parts[1:-2]
-                        description = " ".join(description_parts)
+                        try:
+                            balance = float(parts[-1].replace("$", "").replace(",", ""))
+                            amount = float(parts[-2].replace("$", "").replace(",", ""))
+                            description_parts = parts[1:-2]
+                            description = " ".join(description_parts)
 
-                        # Clean up common OCR issues
-                        description = description.replace("1D:", "ID:")
-                        description = description.replace("Jom", "Jpm")
-                        description = description.replace("Pmt__", "Pmt ")
+                            logger.debug(f"Successfully parsed transaction: Date={date}, Amount={amount}, Balance={balance}, Description={description}")
 
-                        # Categorize transaction
-                        transaction_type, category = self._categorize_transaction(
-                            description, amount)
+                            # Clean up common OCR issues
+                            description = description.replace("1D:", "ID:")
+                            description = description.replace("Jom", "Jpm")
+                            description = description.replace("Pmt__", "Pmt ")
 
-                        transaction = Transaction(
-                            id=transaction_id,
-                            Date=date,
-                            Description=description,
-                            Transaction_Type=transaction_type,
-                            Category=category,
-                            Amount=amount,
-                            Balance=balance,
-                            Notes=""
-                        )
-                        transactions.append(transaction)
-                        transaction_id += 1
+                            # Categorize transaction
+                            transaction_type, category = self._categorize_transaction(description, amount)
+
+                            transaction = Transaction(
+                                id=transaction_id,
+                                Date=date,
+                                Description=description,
+                                Transaction_Type=transaction_type,
+                                Category=category,
+                                Amount=amount,
+                                Balance=balance,
+                                Notes=""
+                            )
+                            transactions.append(transaction)
+                            transaction_id += 1
+                        except (ValueError, IndexError) as e:
+                            logger.error(f"Error parsing transaction values at line {i}: {str(e)}")
+                            logger.error(f"Line content: {line}")
+                            logger.error(f"Split parts: {parts}")
+                            continue
 
                 except Exception as e:
-                    logger.warning(f"Failed to parse transaction line: {line}", exc_info=True)
+                    logger.error(f"Failed to parse transaction line {i}: {line}", exc_info=True)
+                    logger.error(f"Error details: {str(e)}")
                     continue
 
+        logger.debug(f"Successfully extracted {len(transactions)} transactions")
         return sorted(transactions, key=lambda x: (int(x.Date.split('/')[0]), int(x.Date.split('/')[1])))
 
     def _validate_balances(self, beginning_balance: float, ending_balance: float, transactions: List[Transaction]) -> str:
@@ -395,20 +409,29 @@ class StatementService:
     def parse_statement_text(self, text: str, start_time: float, file_content: bytes) -> StatementData:
         """Parse extracted text into structured data."""
         try:
+            logger.debug("Starting statement text parsing")
+            logger.debug(f"Text length: {len(text)} characters")
+            
             # Extract metadata first
+            logger.debug("Extracting metadata...")
             metadata = self._extract_statement_metadata(text)
+            logger.debug(f"Extracted metadata: {metadata}")
 
             # Add timestamp and processing duration
             end_time = time.time()
             processing_duration = f"{end_time - start_time:.1f} seconds"
-            metadata["parsed_on"] = datetime.utcnow().strftime(
-                "%Y-%m-%dT%H:%M:%SZ")
+            metadata["parsed_on"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
             metadata["processing_duration"] = processing_duration
             metadata["timezone"] = "UTC"
 
             # Extract summary and transactions
+            logger.debug("Extracting summary...")
             summary = self.extract_summary(text)
+            logger.debug(f"Extracted summary: {summary}")
+
+            logger.debug("Extracting transactions...")
             transactions = self.extract_transactions(text)
+            logger.debug(f"Extracted {len(transactions)} transactions")
 
             # Flag unusual transactions
             self._flag_transactions(transactions)
